@@ -14,10 +14,8 @@ export class ParseController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  parse(@UploadedFile() file: any) {
+  getAbnormalValues(@UploadedFile() file: any) {
     const oruData = file.buffer.toString('utf-8');
-    const parsedData = this.parseService.parseOruFile(oruData);
-
-    return parsedData;
+    return this.parseService.getAbnormalValues(oruData);
   }
 }
