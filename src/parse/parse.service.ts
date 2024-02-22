@@ -1,7 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DiagnosticMetricsEntity } from 'src/diagnostic-metrics/diagnostic_metrics.entity';
 import { Repository } from 'typeorm';
+import { DiagnosticMetricsEntity } from 'src/diagnostic-metrics/diagnostic_metrics.entity';
+
+export interface AbnormalValues {
+  [key: string]: number;
+}
 
 @Injectable()
 export class ParseService {
@@ -10,10 +14,10 @@ export class ParseService {
     private diagnosticMetricsRepository: Repository<DiagnosticMetricsEntity>,
   ) {}
 
-  parseOruFile(fileData: any) {
+  parseOruFile(fileData: string): Record<string, number> {
     const segments = fileData.split('\r');
 
-    const tests = {};
+    const tests: Record<string, number> = {};
 
     segments.forEach((row) => {
       const fields = row.split('|');
@@ -28,9 +32,12 @@ export class ParseService {
     return tests;
   }
 
-  async getAbnormalValues(fileData: any) {
-    const abnormalValues: Record<string, unknown> = {};
-    const data = await this.diagnosticMetricsRepository.find();
+  async getAbnormalValues(
+    fileData: string,
+  ): Promise<{ abnormalValues: AbnormalValues }> {
+    const abnormalValues: AbnormalValues = {};
+    const data: DiagnosticMetricsEntity[] =
+      await this.diagnosticMetricsRepository.find();
 
     if (!data) {
       throw new HttpException(

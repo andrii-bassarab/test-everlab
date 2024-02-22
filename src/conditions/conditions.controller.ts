@@ -12,7 +12,7 @@ export class ConditionsController {
   }
 
   @Get('parse')
-  async parse() {
+  async parse(): Promise<void> {
     return this.conditionsService.parse();
   }
 }

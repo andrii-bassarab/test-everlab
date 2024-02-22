@@ -1,12 +1,20 @@
 import React from 'react';
 
-const DataTable = ({ data }) => {
+export interface AbnormalValues {
+  [key: string]: number;
+}
+
+interface DataTableProps {
+  data: AbnormalValues;
+}
+
+const DataTable: React.FC<DataTableProps> = ({ data }) => {
   return (
     <table>
       <thead>
         <tr>
           <th>Test Name</th>
-          <th>Value</th>
+          <th>Test Value</th>
         </tr>
       </thead>
       <tbody>

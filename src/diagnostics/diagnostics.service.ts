@@ -6,6 +6,12 @@ import * as csv from 'csv-parser';
 import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
 
+interface CsvRow {
+  [key: string]: string;
+  diagnostic_groups: string;
+  diagnostic_metrics: string;
+}
+
 @Injectable()
 export class DiagnosticsService {
   constructor(
@@ -18,24 +24,28 @@ export class DiagnosticsService {
     return this.diagnosticsRepository.find();
   }
 
-  parse() {
-    const results = [];
+  async parse(): Promise<void> {
+    const results: CsvRow[] = [];
 
-    const newResult = [];
+    const newResult: DiagnosticsEntity[] = [];
 
-    fs.createReadStream(this.configService.get('DIAGNOSTICS_PATH'))
-      .pipe(csv())
-      .on('data', (data) => results.push(data))
-      .on('end', async () => {
-        for (const el of results) {
-          const item = this.diagnosticsRepository.create({
-            name: el[Object.keys(el)[0]],
-            diagnostic_groups: el.diagnostic_groups,
-            diagnostic_metrics: el.diagnostic_metrics,
-          });
-          newResult.push(item);
-        }
-        return this.diagnosticsRepository.save(newResult);
-      });
+    return new Promise<void>((resolve, reject) => {
+      fs.createReadStream(this.configService.get('DIAGNOSTICS_PATH'))
+        .pipe(csv())
+        .on('data', (data: CsvRow) => results.push(data))
+        .on('end', async () => {
+          for (const row of results) {
+            const item = this.diagnosticsRepository.create({
+              name: row[Object.keys(row)[0]],
+              diagnostic_groups: row.diagnostic_groups,
+              diagnostic_metrics: row.diagnostic_metrics,
+            });
+            newResult.push(item);
+          }
+          await this.diagnosticsRepository.save(newResult);
+          resolve();
+        })
+        .on('error', (error) => reject(error));
+    });
   }
 }

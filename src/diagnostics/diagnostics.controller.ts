@@ -12,7 +12,7 @@ export class DiagnosticsController {
   }
 
   @Get('parse')
-  async parse() {
+  async parse(): Promise<void> {
     return this.diagnosticsService.parse();
   }
 }

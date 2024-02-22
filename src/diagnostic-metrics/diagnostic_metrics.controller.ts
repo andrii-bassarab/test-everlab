@@ -14,7 +14,7 @@ export class DiagnosticMetricsController {
   }
 
   @Get('parse')
-  async parse() {
+  async parse(): Promise<void> {
     return this.diagnosticMetricsService.parse();
   }
 }

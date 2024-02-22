@@ -6,6 +6,22 @@ import * as csv from 'csv-parser';
 import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
 
+interface CsvRow {
+  [key: string]: string;
+  oru_sonic_codes: string;
+  diagnostic: string;
+  diagnostic_groups: string;
+  oru_sonic_units: string;
+  units: string;
+  min_age: string;
+  max_age: string;
+  gender: string;
+  standard_lower: string;
+  standard_higher: string;
+  everlab_lower: string;
+  everlab_higher: string;
+}
+
 @Injectable()
 export class DiagnosticMetricsService {
   constructor(
@@ -18,34 +34,38 @@ export class DiagnosticMetricsService {
     return this.diagnosticMetricsRepository.find();
   }
 
-  parse() {
-    const results = [];
+  async parse(): Promise<void> {
+    const results: CsvRow[] = [];
 
-    const newResult = [];
+    const newResult: DiagnosticMetricsEntity[] = [];
 
-    fs.createReadStream(this.configService.get('DIAGNOSTIC_METRICS_PATH'))
-      .pipe(csv())
-      .on('data', (data) => results.push(data))
-      .on('end', async () => {
-        for (const el of results) {
-          const item = this.diagnosticMetricsRepository.create({
-            name: el[Object.keys(el)[0]],
-            oru_sonic_codes: el.oru_sonic_codes,
-            diagnostic: el.diagnostic,
-            diagnostic_groups: el.diagnostic_groups,
-            oru_sonic_units: el.oru_sonic_units,
-            units: el.units,
-            min_age: el.min_age,
-            max_age: el.max_age,
-            gender: el.gender,
-            standard_lower: el.standard_lower,
-            standard_higher: el.standard_higher,
-            everlab_lower: el.everlab_lower,
-            everlab_higher: el.everlab_higher,
-          });
-          newResult.push(item);
-        }
-        return this.diagnosticMetricsRepository.save(newResult);
-      });
+    return new Promise<void>((resolve, reject) => {
+      fs.createReadStream(this.configService.get('DIAGNOSTIC_METRICS_PATH'))
+        .pipe(csv())
+        .on('data', (data: CsvRow) => results.push(data))
+        .on('end', async () => {
+          for (const row of results) {
+            const item = this.diagnosticMetricsRepository.create({
+              name: row[Object.keys(row)[0]],
+              oru_sonic_codes: row.oru_sonic_codes,
+              diagnostic: row.diagnostic,
+              diagnostic_groups: row.diagnostic_groups,
+              oru_sonic_units: row.oru_sonic_units,
+              units: row.units,
+              min_age: row.min_age,
+              max_age: row.max_age,
+              gender: row.gender,
+              standard_lower: row.standard_lower,
+              standard_higher: row.standard_higher,
+              everlab_lower: row.everlab_lower,
+              everlab_higher: row.everlab_higher,
+            });
+            newResult.push(item);
+          }
+          await this.diagnosticMetricsRepository.save(newResult);
+          resolve();
+        })
+        .on('error', (error) => reject(error));
+    });
   }
 }
